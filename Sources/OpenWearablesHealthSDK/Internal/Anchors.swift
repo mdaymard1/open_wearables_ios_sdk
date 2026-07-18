@@ -44,6 +44,12 @@ extension OpenWearablesHealthSDK {
         defaults.set(false, forKey: fullDoneKey())
     }
 
+    /// Reset anchor for a single data type
+    internal func resetAnchorForType(_ type: HKSampleType) {
+        defaults.removeObject(forKey: anchorKey(for: type))
+        logMessage("Reset anchor for \(shortTypeName(type.identifier))")
+    }
+
     // MARK: - Initial sync
     internal func initialSyncKickoff(completion: @escaping (Bool) -> Void) {
         guard HKHealthStore.isHealthDataAvailable() else {

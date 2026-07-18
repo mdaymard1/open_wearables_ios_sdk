@@ -418,11 +418,32 @@ public final class OpenWearablesHealthSDK: NSObject, URLSessionDelegate, URLSess
         clearSyncSession()
         clearOutbox()
         logMessage("Anchors reset - will perform full sync on next sync")
-        
+
         if OpenWearablesHealthSdkKeychain.isSyncActive() && self.hasAuth {
             logMessage("Triggering full export after reset...")
             self.syncAll(fullExport: true) {
                 self.logMessage("Full export after reset completed")
+            }
+        }
+    }
+
+    /// Reset sync anchor for a single data type - forces re-sync of that type only.
+    /// Use this when a specific data type appears to have stopped syncing.
+    ///
+    /// - Parameter type: The health data type to reset
+    /// - Parameter triggerSync: Whether to immediately trigger a sync (default: true)
+    public func resetAnchor(for type: HealthDataType, triggerSync: Bool = true) {
+        guard let hkType = type.toHKSampleType() else {
+            logMessage("Cannot reset anchor: invalid type \(type.rawValue)")
+            return
+        }
+
+        resetAnchorForType(hkType)
+
+        if triggerSync && OpenWearablesHealthSdkKeychain.isSyncActive() && self.hasAuth {
+            logMessage("Triggering sync after anchor reset for \(type.rawValue)...")
+            self.syncAll(fullExport: false) {
+                self.logMessage("Sync after single-type reset completed")
             }
         }
     }
