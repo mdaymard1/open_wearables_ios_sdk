@@ -438,7 +438,12 @@ public final class OpenWearablesHealthSDK: NSObject, URLSessionDelegate, URLSess
             return
         }
 
+        // Clear the anchor from UserDefaults
         resetAnchorForType(hkType)
+
+        // Also clear any cached sync session that might have old anchor data
+        // This is necessary because the sync session caches anchor data in memory/file
+        clearSyncSession()
 
         if triggerSync && OpenWearablesHealthSdkKeychain.isSyncActive() && self.hasAuth {
             logMessage("Triggering sync after anchor reset for \(type.rawValue)...")
