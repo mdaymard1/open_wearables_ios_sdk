@@ -115,6 +115,20 @@ extension OpenWearablesHealthSDK {
         try? FileManager.default.removeItem(at: anchorsFilePath())
         logMessage("Cleared sync state")
     }
+
+    /// Clear sync state for a single type only, leaving other types intact
+    internal func clearSyncStateForType(_ typeIdentifier: String) {
+        guard var state = loadSyncState() else { return }
+
+        // Remove from completed types so it will be re-synced
+        state.completedTypes.remove(typeIdentifier)
+
+        // Remove any cached progress/anchor data for this type
+        state.typeProgress.removeValue(forKey: typeIdentifier)
+
+        saveSyncState(state)
+        logMessage("Cleared sync state for \(typeIdentifier)")
+    }
     
     // MARK: - Start New Sync State
     
