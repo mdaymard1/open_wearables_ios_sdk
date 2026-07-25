@@ -432,7 +432,10 @@ public final class OpenWearablesHealthSDK: NSObject, URLSessionDelegate, URLSess
     ///
     /// - Parameter type: The health data type to reset
     /// - Parameter triggerSync: Whether to immediately trigger a sync (default: true)
-    public func resetAnchor(for type: HealthDataType, triggerSync: Bool = true) {
+    /// - Parameter forceFullExport: Use full export mode instead of incremental sync.
+    ///   This is more reliable for high-frequency types like HeartRate where
+    ///   HKAnchoredObjectQuery may not work correctly even with a nil anchor. (default: true)
+    public func resetAnchor(for type: HealthDataType, triggerSync: Bool = true, forceFullExport: Bool = true) {
         guard let hkType = type.toHKSampleType() else {
             logMessage("Cannot reset anchor: invalid type \(type.rawValue)")
             return
@@ -445,10 +448,18 @@ public final class OpenWearablesHealthSDK: NSObject, URLSessionDelegate, URLSess
         // This removes it from completedTypes and clears pendingAnchorData
         clearSyncStateForType(hkType.identifier)
 
+        // Reset fullDone flag to force full export mode on next sync
+        // This is necessary because HKAnchoredObjectQuery doesn't reliably return
+        // data for some types (e.g., HeartRate) even with a nil anchor
+        if forceFullExport {
+            defaults.set(false, forKey: fullDoneKey())
+            logMessage("Reset fullDone flag to force full export")
+        }
+
         if triggerSync && OpenWearablesHealthSdkKeychain.isSyncActive() && self.hasAuth {
-            logMessage("Triggering sync after anchor reset for \(type.rawValue)...")
-            self.syncAll(fullExport: false) {
-                self.logMessage("Sync after single-type reset completed")
+            logMessage("Triggering full export after anchor reset for \(type.rawValue)...")
+            self.syncAll(fullExport: true) {
+                self.logMessage("Full export after single-type reset completed")
             }
         }
     }
